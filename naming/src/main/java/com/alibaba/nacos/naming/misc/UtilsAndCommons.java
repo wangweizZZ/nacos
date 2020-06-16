@@ -117,13 +117,6 @@ public class UtilsAndCommons {
 
     public static final String NUMBER_PATTERN = "^\\d+$";
 
-    public static final ScheduledExecutorService SERVICE_SYNCHRONIZATION_EXECUTOR;
-
-    public static final ScheduledExecutorService SERVICE_UPDATE_EXECUTOR;
-
-    public static final ScheduledExecutorService INIT_CONFIG_EXECUTOR;
-
-    public static final Executor RAFT_PUBLISH_EXECUTOR;
 
     static {
 
@@ -142,51 +135,7 @@ public class UtilsAndCommons {
         // TODO register in implementation class or remove subType
         JacksonUtils.registerSubtype(NoneSelector.class, SelectorType.none.name());
         JacksonUtils.registerSubtype(LabelSelector.class, SelectorType.label.name());
-
-        SERVICE_SYNCHRONIZATION_EXECUTOR
-            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("nacos.naming.service.worker");
-                t.setDaemon(true);
-                return t;
-            }
-        });
-
-        SERVICE_UPDATE_EXECUTOR
-            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("nacos.naming.service.update.processor");
-                t.setDaemon(true);
-                return t;
-            }
-        });
-
-        INIT_CONFIG_EXECUTOR
-            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("nacos.naming.init.config.worker");
-                t.setDaemon(true);
-                return t;
-            }
-        });
-
-        RAFT_PUBLISH_EXECUTOR
-            = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("nacos.naming.raft.publisher");
-                t.setDaemon(true);
-                return t;
-            }
-        });
-
+        
     }
 
     public static String getSwitchDomainKey() {

@@ -15,18 +15,16 @@
  */
 package com.alibaba.nacos.config.server.monitor;
 
+import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
+
 import com.alibaba.nacos.config.server.service.ClientTrackService;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
+import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
 
 /**
  * Memory monitor
@@ -39,13 +37,13 @@ public class MemoryMonitor {
     @Autowired
     public MemoryMonitor(AsyncNotifyService notifySingleService) {
 
-        ConfigExecutor.scheduleWithFixedDelay(new PrintMemoryTask(), DELAY_SECONDS,
+        ConfigExecutor.scheduleTimer(new PrintMemoryTask(), DELAY_SECONDS,
             DELAY_SECONDS, TimeUnit.SECONDS);
 
-        ConfigExecutor.scheduleWithFixedDelay(new PrintGetConfigResponeTask(), DELAY_SECONDS,
+        ConfigExecutor.scheduleTimer(new PrintGetConfigResponeTask(), DELAY_SECONDS,
             DELAY_SECONDS, TimeUnit.SECONDS);
 
-        ConfigExecutor.scheduleWithFixedDelay(new NotifyTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS,
+        ConfigExecutor.scheduleTimer(new NotifyTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS,
             DELAY_SECONDS, TimeUnit.SECONDS);
 
     }
@@ -88,7 +86,7 @@ class NotifyTaskQueueMonitorTask implements Runnable {
 
     @Override
     public void run() {
-        int size = ((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getQueue().size();
+        int size =  ConfigExecutor.asyncNotifyQueueSize();
         memoryLog.info("toNotifyTaskSize={}", size);
         MetricsMonitor.getNotifyTaskMonitor().set(size);
     }

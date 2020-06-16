@@ -127,9 +127,9 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 throw new RuntimeException(DB_LOAD_ERROR_MSG);
             }
 
-            ConfigExecutor.scheduleWithFixedDelay(new SelectMasterTask(), 10, 10,
+            ConfigExecutor.scheduleTimer(new SelectMasterTask(), 10, 10,
                 TimeUnit.SECONDS);
-            ConfigExecutor.scheduleWithFixedDelay(new CheckDBHealthTask(), 10, 10,
+            ConfigExecutor.scheduleTimer(new CheckDBHealthTask(), 10, 10,
                 TimeUnit.SECONDS);
         }
     }

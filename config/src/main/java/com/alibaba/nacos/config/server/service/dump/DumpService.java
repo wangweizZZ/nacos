@@ -212,23 +212,23 @@ public abstract class DumpService {
 				};
 
 				ConfigExecutor
-						.scheduleWithFixedDelay(heartbeat, 0, 10, TimeUnit.SECONDS);
+						.scheduleTimer(heartbeat, 0, 10, TimeUnit.SECONDS);
 
 				long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
 				LogUtil.defaultLog.warn("initialDelay:{}", initialDelay);
 
-				ConfigExecutor.scheduleWithFixedDelay(dumpAll, initialDelay,
+				ConfigExecutor.scheduleTimer(dumpAll, initialDelay,
 						DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 
-				ConfigExecutor.scheduleWithFixedDelay(dumpAllBeta, initialDelay,
+				ConfigExecutor.scheduleTimer(dumpAllBeta, initialDelay,
                         DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 
-                ConfigExecutor.scheduleWithFixedDelay(dumpAllTag, initialDelay,
+                ConfigExecutor.scheduleTimer(dumpAllTag, initialDelay,
                         DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 			}
 
 			ConfigExecutor
-					.scheduleWithFixedDelay(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
+					.scheduleTimer(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
 		}
 		finally {
 			TimerContext.end(LogUtil.dumpLog);
@@ -281,7 +281,7 @@ public abstract class DumpService {
 					LogUtil.defaultLog.error("end checkMd5Task");
 				};
 				ConfigExecutor
-						.scheduleWithFixedDelay(checkMd5Task, 0, 12, TimeUnit.HOURS);
+						.scheduleTimer(checkMd5Task, 0, 12, TimeUnit.HOURS);
 			}
 		}
 		catch (IOException e) {

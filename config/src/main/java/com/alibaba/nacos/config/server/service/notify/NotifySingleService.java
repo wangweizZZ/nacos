@@ -15,6 +15,10 @@
  */
 package com.alibaba.nacos.config.server.service.notify;
 
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.config.server.Config;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -90,21 +94,6 @@ public class NotifySingleService {
         }
     }
 
-    static class NotifyThreadFactory implements ThreadFactory {
-        private final String notifyTarget;
-
-        NotifyThreadFactory(String notifyTarget) {
-            this.notifyTarget = notifyTarget;
-        }
-
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r, "com.alibaba.nacos.NotifySingleServiceThread-" + notifyTarget);
-            thread.setDaemon(true);
-            return thread;
-        }
-    }
-
     @Autowired
     public NotifySingleService(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
@@ -123,7 +112,9 @@ public class NotifySingleService {
 
             // 固定线程数，无界队列（基于假设: 线程池的吞吐量不错，不会出现持续任务堆积，存在偶尔的瞬间压力）
             @SuppressWarnings("PMD.ThreadPoolCreationRule")
-            Executor executor = Executors.newScheduledThreadPool(1, new NotifyThreadFactory(address));
+            Executor executor = ExecutorFactory.newSingleScheduledExecutorService(
+                    Config.class.getCanonicalName(),
+                    new NameThreadFactory("com.alibaba.nacos.NotifySingleServiceThread-" + address));
 
             if (null == executors.putIfAbsent(address, executor)) {
                 logger.warn("[notify-thread-pool] setup thread target ip {} ok.", address);
@@ -139,6 +130,7 @@ public class NotifySingleService {
                 ThreadPoolExecutor executor = (ThreadPoolExecutor)entry.getValue();
                 executor.shutdown();
                 executors.remove(target);
+                ThreadUtils.shutdownThreadPool(Config.class.getCanonicalName(), executor);
                 logger.warn("[notify-thread-pool] tear down thread target ip {} ok.", target);
             }
         }

@@ -20,7 +20,10 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
@@ -46,15 +49,9 @@ public class EventDispatcher implements Closeable {
 
     public EventDispatcher() {
 
-        this.executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r, "com.alibaba.nacos.naming.client.listener");
-                thread.setDaemon(true);
-
-                return thread;
-            }
-        });
+        this.executor = ExecutorFactory.newSingleExecutorService(
+                NacosNamingService.class.getCanonicalName(),
+                new NameThreadFactory("com.alibaba.nacos.naming.client.listener"));
 
         this.executor.execute(new Notifier());
     }
@@ -116,7 +113,7 @@ public class EventDispatcher implements Closeable {
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdownThreadPool(executor, NAMING_LOGGER);
+        ThreadUtils.shutdownThreadPool(NacosNamingService.class.getCanonicalName(), executor, NAMING_LOGGER);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 

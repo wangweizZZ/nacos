@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.slf4j.Logger;
-
+import com.alibaba.nacos.common.executor.ExecutorFactory;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -102,6 +102,16 @@ public final class ThreadUtils {
             }
         }
         executor.shutdownNow();
+    }
+
+    public static void shutdownThreadPool(String group, ExecutorService executor){
+        shutdownThreadPool(executor);
+        ExecutorFactory.deregister(group, executor);
+    }
+
+    public static void shutdownThreadPool(String group, ExecutorService executor, Logger logger){
+        shutdownThreadPool(executor, logger);
+        ExecutorFactory.deregister(group, executor);
     }
 
     private final static int THREAD_MULTIPLER = 2;

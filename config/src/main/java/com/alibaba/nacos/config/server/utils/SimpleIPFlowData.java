@@ -15,9 +15,10 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import java.util.concurrent.Executors;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.config.server.Config;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -36,17 +37,9 @@ public class SimpleIPFlowData {
     private int averageCount;
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    private ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName("nacos ip flow control thread");
-            t.setDaemon(true);
-            return t;
-        }
-
-    });
+    private ScheduledExecutorService timer = ExecutorFactory.newSingleScheduledExecutorService(
+            Config.class.getCanonicalName(),
+            new NameThreadFactory("com.alibaba.nacos.flow.control.ip"));
 
     class DefaultIPFlowDataManagerTask implements Runnable {
 

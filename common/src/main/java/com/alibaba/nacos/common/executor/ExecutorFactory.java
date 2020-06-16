@@ -93,4 +93,9 @@ public final class ExecutorFactory {
         return executor;
     }
 
+
+    public static void deregister(String group, ExecutorService executor) {
+        THREAD_POOL_MANAGER.deregister(DEFAULT_NAMESPACE, group, executor);
+    }
+
 }

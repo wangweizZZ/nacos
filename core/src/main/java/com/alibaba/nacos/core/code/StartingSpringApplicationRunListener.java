@@ -213,7 +213,7 @@ public class StartingSpringApplicationRunListener
 
 			scheduledExecutorService = ExecutorFactory
 					.newSingleScheduledExecutorService(getClass().getCanonicalName(),
-							new NameThreadFactory("nacos-starting"));
+							new NameThreadFactory("com.alibaba.nacos.nacos-starting"));
 
 			scheduledExecutorService.scheduleWithFixedDelay(() -> {
 				if (starting) {

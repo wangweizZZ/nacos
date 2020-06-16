@@ -16,8 +16,12 @@
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.naming.NamingApp;
 import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -72,31 +76,16 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     private static int totalPush = 0;
 
     private static int failedPush = 0;
-
     private static ConcurrentHashMap<String, Long> lastPushMillisMap = new ConcurrentHashMap<>();
 
     private static DatagramSocket udpSocket;
 
     private static Map<String, Future> futureMap = new ConcurrentHashMap<>();
-    private static ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setDaemon(true);
-            t.setName("com.alibaba.nacos.naming.push.retransmitter");
-            return t;
-        }
-    });
 
-    private static ScheduledExecutorService udpSender = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setDaemon(true);
-            t.setName("com.alibaba.nacos.naming.push.udpSender");
-            return t;
-        }
-    });
+    private static ScheduledExecutorService udpSender = ExecutorFactory.newSingleScheduledExecutorService(
+            NamingApp.class.getCanonicalName(),
+            new NameThreadFactory("com.alibaba.nacos.naming.push.udpSender"));
+
 
     static {
         try {
@@ -109,7 +98,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             inThread.setName("com.alibaba.nacos.naming.push.receiver");
             inThread.start();
 
-            executorService.scheduleWithFixedDelay(new Runnable() {
+            GlobalExecutor.scheduleRetransmitter(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -136,7 +125,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         String serviceName = service.getName();
         String namespaceId = service.getNamespaceId();
 
-        Future future = udpSender.schedule(new Runnable() {
+        Future future = GlobalExecutor.scheduleUdpSender(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -600,7 +589,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
             ackEntry.increaseRetryTime();
 
-            executorService.schedule(new Retransmitter(ackEntry), TimeUnit.NANOSECONDS.toMillis(ACK_TIMEOUT_NANOS),
+            GlobalExecutor.scheduleRetransmitter(new Retransmitter(ackEntry), TimeUnit.NANOSECONDS.toMillis(ACK_TIMEOUT_NANOS),
                 TimeUnit.MILLISECONDS);
 
             return ackEntry;

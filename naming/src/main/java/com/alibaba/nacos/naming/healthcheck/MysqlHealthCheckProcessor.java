@@ -16,6 +16,9 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.naming.NamingApp;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -60,20 +63,11 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
     private static ExecutorService EXECUTOR;
 
     static {
-
         int processorCount = Runtime.getRuntime().availableProcessors();
-        EXECUTOR
-                = Executors.newFixedThreadPool(processorCount <= 1 ? 1 : processorCount / 2,
-                new ThreadFactory() {
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        Thread thread = new Thread(r);
-                        thread.setDaemon(true);
-                        thread.setName("com.nacos.mysql.checker");
-                        return thread;
-                    }
-                }
-        );
+        EXECUTOR = ExecutorFactory.newFixExecutorService(
+                NamingApp.class.getCanonicalName(),
+                processorCount <= 1 ? 1 : processorCount / 2,
+                new NameThreadFactory("com.alibaba.nacos.mysql.checker"));
     }
 
     public MysqlHealthCheckProcessor() {

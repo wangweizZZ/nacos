@@ -15,6 +15,10 @@
  */
 package com.alibaba.nacos.config.server.service.capacity;
 
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.config.server.Config;
 import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
@@ -24,22 +28,18 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.google.common.base.Stopwatch;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.sql.Timestamp;
+import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.sql.Timestamp;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Capacity service
@@ -64,12 +64,12 @@ public class CapacityService {
     private ScheduledExecutorService scheduledExecutorService;
 
     @PostConstruct
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public void init() {
         // 每个Server都有修正usage的Job在跑，幂等
-        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(
-            "com.alibaba.nacos.CapacityManagement-%d").setDaemon(true).build();
-        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        scheduledExecutorService = ExecutorFactory.newSingleScheduledExecutorService(
+                Config.class.getCanonicalName(),
+                new NameThreadFactory("com.alibaba.nacos.CapacityManagement"));
+
         scheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
@@ -84,7 +84,7 @@ public class CapacityService {
 
     @PreDestroy
     public void destroy() {
-        scheduledExecutorService.shutdown();
+        ThreadUtils.shutdownThreadPool(Config.class.getCanonicalName(), scheduledExecutorService);
     }
 
     public void correctUsage() {

@@ -15,6 +15,9 @@
  */
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.naming.NamingApp;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -68,29 +71,15 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
      */
     private static final long TCP_KEEP_ALIVE_MILLIS = 0;
 
-    private static ScheduledExecutorService TCP_CHECK_EXECUTOR
-        = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName("nacos.naming.tcp.check.worker");
-            t.setDaemon(true);
-            return t;
-        }
-    });
+    private static ScheduledExecutorService TCP_CHECK_EXECUTOR = ExecutorFactory.newSingleScheduledExecutorService(
+            NamingApp.class.getCanonicalName(),
+            new NameThreadFactory("com.alibaba.nacos.naming.tcp.check.worker"));
 
-    private static ScheduledExecutorService NIO_EXECUTOR
-        = Executors.newScheduledThreadPool(NIO_THREAD_COUNT,
-        new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                thread.setName("nacos.supersense.checker");
-                return thread;
-            }
-        }
-    );
+    private static ScheduledExecutorService NIO_EXECUTOR = ExecutorFactory.newScheduledExecutorService(
+            NamingApp.class.getCanonicalName(),
+            NIO_THREAD_COUNT,
+            new NameThreadFactory("com.alibaba.nacos.supersense.checker"));
+
 
     private Selector selector;
 

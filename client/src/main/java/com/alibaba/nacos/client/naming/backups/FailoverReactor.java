@@ -17,11 +17,14 @@ package com.alibaba.nacos.client.naming.backups;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
@@ -52,15 +55,10 @@ public class FailoverReactor implements Closeable {
         this.hostReactor = hostReactor;
         this.failoverDir = cacheDir + "/failover";
         // init executorService
-        this.executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                thread.setName("com.alibaba.nacos.naming.failover");
-                return thread;
-            }
-        });
+        this.executorService = ExecutorFactory.newSingleScheduledExecutorService(
+                NacosNamingService.class.getCanonicalName(),
+                new NameThreadFactory("com.alibaba.nacos.naming.failover"));
+
         this.init();
     }
 
@@ -108,7 +106,7 @@ public class FailoverReactor implements Closeable {
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
+        ThreadUtils.shutdownThreadPool(NacosNamingService.class.getCanonicalName(), executorService, NAMING_LOGGER);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 
